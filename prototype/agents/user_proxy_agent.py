@@ -129,18 +129,43 @@ class UserProxyAgent:
             slots=slots,
             decisions=decisions
         )
-        
-        # Check if we should escalate
-        utilities = result["utilities"]
-        escalate, reason = self._should_escalate(utilities)
-        
+
+        # Normalize utilities keys: model may return time strings instead of hashes
+        utilities = result.get("utilities", {})
+        # hash_to_time is mapping hash->time (ISO string)
+        time_to_hash = {v: k for k, v in hash_to_time.items()}
+        normalized_utils: dict[str, int] = {}
+        for key, score in utilities.items():
+            # If key already a hash we expect
+            if key in hash_to_time:
+                normalized_utils[key] = score
+            # If key is a time string, map to hash
+            elif key in time_to_hash:
+                normalized_utils[time_to_hash[key]] = score
+            else:
+                # Unknown key format - keep as-is
+                normalized_utils[key] = score
+
+        # Normalize slot_breakdown slot_id values similarly
+        slot_breakdown = result.get("slot_breakdown", [])
+        for slot in slot_breakdown:
+            sid = slot.get("slot_id")
+            # if slot_id is a time string, convert to hash
+            if isinstance(sid, str) and sid in time_to_hash:
+                slot["slot_id"] = time_to_hash[sid]
+            # ensure a human-readable time field exists
+            if "time" not in slot and slot.get("slot_id") in hash_to_time:
+                slot["time"] = hash_to_time[slot["slot_id"]]
+
+        escalate, reason = self._should_escalate(normalized_utils)
+
         return UtilityResponse(
             user_id=self.user_id,
-            utilities=utilities,
+            utilities=normalized_utils,
             escalate=escalate,
             escalation_reason=reason,
             reasoning=result.get("reasoning"),
-            slot_breakdown=result.get("slot_breakdown", []),
+            slot_breakdown=slot_breakdown,
             preferences_applied=result.get("preferences_applied", [])
         )
     

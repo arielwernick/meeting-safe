@@ -5,7 +5,11 @@ from datetime import datetime
 
 from config import config
 
-engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": False})
+# SQLite needs check_same_thread=False, PostgreSQL doesn't
+if config.DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(config.DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(config.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

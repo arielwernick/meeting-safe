@@ -11,8 +11,9 @@ class Config:
     # LLM Mode: "mock" or "openai"
     LLM_MODE: str = os.getenv("LLM_MODE", "mock")
     
-    # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./meeting_safe.db")
+    # Database - Railway uses postgres:// but SQLAlchemy needs postgresql://
+    _db_url: str = os.getenv("DATABASE_URL", "sqlite:///./meeting_safe.db")
+    DATABASE_URL: str = _db_url.replace("postgres://", "postgresql://") if _db_url.startswith("postgres://") else _db_url
     
     # Server
     HOST: str = os.getenv("HOST", "127.0.0.1")

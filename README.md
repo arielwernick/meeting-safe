@@ -1,12 +1,20 @@
 # Meeting Safe
 
+## 🚀 Live Demo
+
+**Try it now:**
+- [📅 Meeting Scheduler](https://meeting-safe-production.up.railway.app/app) — Schedule meetings with privacy-preserving coordination
+- [🧠 Intelligence Dashboard](https://meeting-safe-production.up.railway.app/app/intelligence) — See how agents learn from user decisions
+
+---
+
 ## The Challenge
 
 > Meeting scheduling is a mostly solved problem when one person or agent has access to all calendars. It gets interesting when access is gated. Can you build an agentic system where each agent in the system only has access to the calendar of an individual, yet meetings are scheduled based on the availability of multiple people?
 >
 > The problem gets trickier when you start adding intelligence. I have meetings on my calendar I rarely attend. I'll reschedule internal 1:1s to make room for external customer calls. And everyone controls their own calendar in a slightly different way. How can a scheduling agent learn these preferences over time, instead of just looking for open slots, and possibly even escalate to me when needed.
 >
-> — [Distyl AI Engineering Challenge](https://www.linkedin.com/posts/willcrichton_following-up-from-my-post-yesterday-about-activity-7285015651665965056-P0jL)
+> — [Distyl AI Engineering Challenge](https://www.linkedin.com/posts/aryeh-klein-670527150_following-up-from-my-post-yesterday-about-activity-7417579422553182208-SYgC?utm_source=share&utm_medium=member_desktop&rcm=ACoAABV47C0B2wge45FVCmyv3SKI6P84kfPHDcE)
 
 ---
 
@@ -119,10 +127,10 @@ Each agent uses an LLM to score slots based on:
 
 ## Two UIs
 
-### `/app` — Privacy Layer
+### [/app](https://meeting-safe-production.up.railway.app/app) — Privacy Layer
 Watch hash-based coordination happen. See what the Meeting Agent sees (just hashes and scores).
 
-### `/app/intelligence` — Intelligence Layer  
+### [/app/intelligence](https://meeting-safe-production.up.railway.app/app/intelligence) — Intelligence Layer  
 Tabbed dashboard showing each user's decision matrix, learned preferences, and scoring breakdown.
 
 ---

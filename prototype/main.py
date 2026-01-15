@@ -84,6 +84,18 @@ class RecordDecisionRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    # Auto-seed if database is empty
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        user_count = db.query(UserDB).count()
+        if user_count == 0:
+            print("Database empty, seeding...")
+            from seed import seed_database
+            seed_database()
+            print("Database seeded!")
+    finally:
+        db.close()
 
 
 @app.get("/")
