@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Safe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Roboto:wght@400;500&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { font-family: 'Google Sans', 'Roboto', sans-serif; }
+        .hash-text { font-family: 'Roboto Mono', monospace; font-size: 0.7rem; }
+        .event-external { border-left: 3px solid #ea4335; }
+        .event-internal { border-left: 3px solid #4285f4; }
+        .event-focus { border-left: 3px solid #34a853; }
+        .event-personal { border-left: 3px solid #9aa0a6; }
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f3f4; border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+        .shadow-google { box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); }
+        .shadow-google-hover:hover { box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7zm0 1.2c-.8 0-1.5.7-1.5 1.5V11h3V9.7c0-.8-.7-1.5-1.5-1.5z"/>
+                </svg>
+                <span class="text-xl text-gray-700 font-medium">Meeting Safe</span>
+            </div>
+            <span class="text-sm text-gray-500 ml-2">Privacy-Preserving Scheduler</span>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Calendars + Form -->
+            <div class="lg:col-span-8 space-y-6">
+                
+                <!-- Calendar Section -->
+                <div class="bg-white rounded-lg shadow-google p-5">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <h2 class="text-base font-medium text-gray-800">User Calendars</h2>
+                        <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">Private to each agent</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="calendars">
+                        <!-- Calendar cards inserted here -->
+                    </div>
+                </div>
+
+                <!-- Meeting Request Form -->
+                <div class="bg-white rounded-lg shadow-google p-5">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        <h2 class="text-base font-medium text-gray-800">New Meeting</h2>
+                    </div>
+                    
+                    <form id="meetingForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">Title</label>
+                            <input type="text" id="meetingTitle" value="Team Sync" 
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">Organizer</label>
+                                <select id="organizer" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="alice">Alice Chen</option>
+                                    <option value="bob">Bob Smith</option>
+                                    <option value="carol">Carol Jones</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">Duration</label>
+                                <select id="duration" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="30">30 minutes</option>
+                                    <option value="60">60 minutes</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-2">Participants</label>
+                            <div class="flex gap-6">
+                                <label class="flex items-center gap-2 text-gray-700">
+                                    <input type="checkbox" id="invite_alice" checked class="w-4 h-4 rounded text-blue-500 focus:ring-blue-500">
+                                    <span>Alice</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-gray-700">
+                                    <input type="checkbox" id="invite_bob" checked class="w-4 h-4 rounded text-blue-500 focus:ring-blue-500">
+                                    <span>Bob</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-gray-700">
+                                    <input type="checkbox" id="invite_carol" checked class="w-4 h-4 rounded text-blue-500 focus:ring-blue-500">
+                                    <span>Carol</span>
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" 
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-lg py-2.5 font-medium transition shadow-sm hover:shadow">
+                            Schedule Meeting
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Privacy Comparison -->
+                <div class="bg-white rounded-lg shadow-google p-5">
+                    <h3 class="text-base font-medium text-gray-800 mb-4">How It Works</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-red-50 border border-red-100 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="font-medium text-red-700 text-sm">Traditional Scheduler</span>
+                            </div>
+                            <ul class="text-xs text-red-600 space-y-1">
+                                <li>• Sees all calendars</li>
+                                <li>• Learns availability patterns</li>
+                                <li>• Central data exposure</li>
+                            </ul>
+                        </div>
+                        <div class="bg-green-50 border border-green-100 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                </svg>
+                                <span class="font-medium text-green-700 text-sm">Meeting Safe</span>
+                            </div>
+                            <ul class="text-xs text-green-600 space-y-1">
+                                <li>• Sees only hashes + scores</li>
+                                <li>• Each agent is private</li>
+                                <li>• Only organizer sees time</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Agent View + Learning -->
+            <div class="lg:col-span-4 space-y-6">
+                
+                <!-- Meeting Agent View -->
+                <div class="bg-white rounded-lg shadow-google p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                        </svg>
+                        <h2 class="text-base font-medium text-gray-800">Meeting Agent View</h2>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                        <p class="text-xs text-amber-700">
+                            <strong>Privacy:</strong> The agent only sees hashes, never actual times or calendar data.
+                        </p>
+                    </div>
+                    <div id="agentView" class="text-sm text-gray-500 italic max-h-64 overflow-y-auto scrollbar-thin">
+                        Schedule a meeting to see what the agent sees...
+                    </div>
+                </div>
+
+                <!-- Learned Preferences -->
+                <div class="bg-white rounded-lg shadow-google p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        <h2 class="text-base font-medium text-gray-800">Learned Preferences</h2>
+                    </div>
+                    <div id="learningPanel" class="space-y-2">
+                        <p class="text-sm text-gray-500 italic">Loading...</p>
+                    </div>
+                </div>
+
+                <!-- Result Panel -->
+                <div id="resultPanel" class="hidden bg-white rounded-lg shadow-google border-l-4 border-green-500 p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <h3 class="font-medium text-gray-800">Meeting Scheduled</h3>
+                    </div>
+                    <div id="resultContent" class="text-sm"></div>
+                </div>
+
+                <!-- Escalation Panel -->
+                <div id="escalationPanel" class="hidden bg-white rounded-lg shadow-google border-l-4 border-blue-500 p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                        <h3 class="font-medium text-gray-800">Choose a Time</h3>
+                    </div>
+                    <div id="escalationContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        
+        // Get tomorrow's date for scheduling window
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(7, 0, 0, 0);  // Start at 7am to catch early events
+        
+        const windowEnd = new Date(tomorrow);
+        windowEnd.setHours(19, 0, 0, 0);  // End at 7pm to catch late events
+
+        // Format date as local ISO string (not UTC)
+        function toLocalISOString(date) {
+            const pad = n => n.toString().padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
+
+        function getEventClass(event) {
+            if (event.external) return 'event-external';
+            if (event.event_type === 'focus_time') return 'event-focus';
+            if (event.event_type === 'personal') return 'event-personal';
+            return 'event-internal';
+        }
+
+        // Load users and their calendars
+        async function loadCalendars() {
+            try {
+                const usersRes = await fetch(`${API_BASE}/users`);
+                const users = await usersRes.json();
+                
+                const calendarsDiv = document.getElementById('calendars');
+                calendarsDiv.innerHTML = '';
+                
+                for (const user of users) {
+                    const calRes = await fetch(
+                        `${API_BASE}/users/${user.id}/calendar?start=${toLocalISOString(tomorrow)}&end=${toLocalISOString(windowEnd)}`
+                    );
+                    const calData = await calRes.json();
+                    
+                    const card = document.createElement('div');
+                    card.className = 'border border-gray-200 rounded-lg overflow-hidden';
+                    card.innerHTML = `
+                        <div class="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                            <h4 class="font-medium text-gray-800 text-sm">${user.name}</h4>
+                            <p class="text-xs text-gray-500">${user.email}</p>
+                        </div>
+                        <div class="p-2 space-y-1 max-h-52 overflow-y-auto scrollbar-thin">
+                            ${calData.events.length === 0 ? 
+                                '<p class="text-xs text-gray-400 italic p-2">No events tomorrow</p>' :
+                                calData.events.map(e => `
+                                    <div class="text-xs bg-white border border-gray-100 rounded px-2 py-1.5 ${getEventClass(e)} shadow-sm">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-gray-400 w-12 flex-shrink-0 font-medium">
+                                                ${new Date(e.start_time).toLocaleTimeString([], {hour: 'numeric', minute:'2-digit'})}
+                                            </span>
+                                            <span class="text-gray-700 truncate flex-1" title="${e.title}">
+                                                ${e.title}
+                                            </span>
+                                        </div>
+                                    </div>
+                                `).join('')
+                            }
+                        </div>
+                    `;
+                    calendarsDiv.appendChild(card);
+                }
+            } catch (err) {
+                console.error('Failed to load calendars:', err);
+            }
+        }
+
+        // Load learning history
+        async function loadLearning() {
+            try {
+                const res = await fetch(`${API_BASE}/users/alice/decisions`);
+                const data = await res.json();
+                
+                const panel = document.getElementById('learningPanel');
+                if (data.decisions.length === 0) {
+                    panel.innerHTML = '<p class="text-sm text-gray-500 italic">No decisions recorded yet</p>';
+                } else {
+                    panel.innerHTML = data.decisions.map(d => `
+                        <div class="flex items-start gap-2 text-xs p-2 rounded ${d.user_action === 'accepted' || d.user_action === 'selected' ? 'bg-green-50' : 'bg-red-50'}">
+                            <span class="${d.user_action === 'accepted' || d.user_action === 'selected' ? 'text-green-500' : 'text-red-500'} mt-0.5">
+                                ${d.user_action === 'accepted' || d.user_action === 'selected' ? '✓' : '✗'}
+                            </span>
+                            <span class="text-gray-700">
+                                ${d.user_action === 'accepted' ? 'Rescheduled' : d.user_action === 'selected' ? 'Selected' : 'Protected'} 
+                                <span class="font-medium text-blue-600">${d.conflicting_type || 'time slot'}</span>
+                                ${d.meeting_type ? `for <span class="font-medium text-purple-600">${d.meeting_type}</span>` : ''}
+                            </span>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load learning:', err);
+            }
+        }
+
+        // Schedule meeting
+        async function scheduleMeeting(e) {
+            e.preventDefault();
+            
+            const organizer = document.getElementById('organizer').value;
+            const participants = [];
+            if (document.getElementById('invite_alice').checked && organizer !== 'alice') participants.push('alice');
+            if (document.getElementById('invite_bob').checked && organizer !== 'bob') participants.push('bob');
+            if (document.getElementById('invite_carol').checked && organizer !== 'carol') participants.push('carol');
+            
+            const request = {
+                title: document.getElementById('meetingTitle').value,
+                organizer_id: organizer,
+                participant_ids: participants,
+                duration_minutes: parseInt(document.getElementById('duration').value),
+                window_start: toLocalISOString(tomorrow),
+                window_end: toLocalISOString(windowEnd),
+                meeting_type: 'internal',
+                external: false
+            };
+
+            const agentView = document.getElementById('agentView');
+            agentView.innerHTML = '<p class="text-blue-500">⏳ Coordinating meeting...</p>';
+
+            try {
+                const res = await fetch(`${API_BASE}/meetings/schedule`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(request)
+                });
+                const result = await res.json();
+                
+                displayAgentView(result);
+                
+                if (result.status === 'escalation_needed') {
+                    displayEscalation(result);
+                } else {
+                    displayResult(result);
+                }
+                
+            } catch (err) {
+                console.error('Scheduling failed:', err);
+                agentView.innerHTML = '<p class="text-red-500">❌ Scheduling failed</p>';
+            }
+        }
+
+        function displayAgentView(result) {
+            const agentView = document.getElementById('agentView');
+            const mv = result.meeting_agent_view;
+            
+            const sortedHashes = Object.entries(mv.aggregated_scores)
+                .sort((a, b) => b[1] - a[1]);  // Show all hashes
+            
+            const maxScore = Math.max(...Object.values(mv.aggregated_scores));
+            
+            agentView.innerHTML = `
+                <div class="space-y-2">
+                    ${sortedHashes.map(([hash, score]) => `
+                        <div class="flex items-center gap-2">
+                            <span class="hash-text text-gray-400 w-16">${hash.slice(0, 8)}...</span>
+                            <div class="flex-1 bg-gray-100 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full transition-all" 
+                                     style="width: ${(score / maxScore) * 100}%"></div>
+                            </div>
+                            <span class="text-xs text-gray-500 w-8 text-right">${score.toFixed(0)}</span>
+                            ${hash === mv.winning_hash ? '<span class="text-yellow-500 text-xs">★</span>' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                    Winner: <span class="hash-text text-blue-500">${mv.winning_hash.slice(0, 12)}...</span>
+                </div>
+            `;
+        }
+
+        function displayResult(result) {
+            const panel = document.getElementById('resultPanel');
+            const content = document.getElementById('resultContent');
+            const escalationPanel = document.getElementById('escalationPanel');
+            
+            escalationPanel.classList.add('hidden');
+            panel.classList.remove('hidden');
+            
+            const winningTime = new Date(result.initiator_view.winning_time);
+            
+            content.innerHTML = `
+                <p class="text-gray-700">
+                    <strong>${winningTime.toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'})}</strong>
+                    at <strong>${winningTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</strong>
+                </p>
+                <p class="text-xs text-gray-500 mt-2">
+                    Only the organizer can see this time.
+                </p>
+            `;
+        }
+
+        function displayEscalation(result) {
+            const panel = document.getElementById('escalationPanel');
+            const content = document.getElementById('escalationContent');
+            const resultPanel = document.getElementById('resultPanel');
+            
+            resultPanel.classList.add('hidden');
+            panel.classList.remove('hidden');
+            
+            const topOptions = result.initiator_view.top_options || [];
+            
+            content.innerHTML = `
+                <p class="text-sm text-gray-600 mb-3">Multiple good times found — pick one:</p>
+                
+                <div class="space-y-2 mb-3">
+                    ${topOptions.map((opt, idx) => {
+                        const time = new Date(opt.time);
+                        const timeStr = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const dateStr = time.toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'});
+                        return `
+                            <button onclick="selectOption('${result.meeting_id}', '${opt.time}')" 
+                                    class="w-full text-left bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-3 transition">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span class="font-medium text-gray-800">${timeStr}</span>
+                                        <span class="text-gray-500 text-sm ml-2">${dateStr}</span>
+                                    </div>
+                                    <span class="text-xs text-gray-400">Score: ${opt.score.toFixed(0)}</span>
+                                </div>
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <button onclick="hideEscalation()" class="text-sm text-gray-500 hover:text-gray-700">
+                    Cancel
+                </button>
+            `;
+        }
+
+        function hideEscalation() {
+            document.getElementById('escalationPanel').classList.add('hidden');
+        }
+
+        async function selectOption(meetingId, selectedTime) {
+            const time = new Date(selectedTime);
+            const timeStr = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const dateStr = time.toLocaleDateString([], {weekday: 'short', month: 'short', day: 'numeric'});
+            
+            await fetch(`${API_BASE}/users/alice/decisions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    meeting_type: 'internal',
+                    conflicting_type: null,
+                    recommended_action: 'user_choice',
+                    user_action: 'selected',
+                    notes: `User selected ${timeStr} from multiple options`
+                })
+            });
+            
+            hideEscalation();
+            const resultPanel = document.getElementById('resultPanel');
+            const resultContent = document.getElementById('resultContent');
+            resultPanel.classList.remove('hidden');
+            
+            resultContent.innerHTML = `
+                <p class="text-gray-700">
+                    <strong>${dateStr}</strong> at <strong>${timeStr}</strong>
+                </p>
+                <p class="text-xs text-green-600 mt-2">✓ You selected this time</p>
+            `;
+            
+            await loadLearning();
+            await loadCalendars();
+        }
+
+        // Initialize
+        document.getElementById('meetingForm').addEventListener('submit', scheduleMeeting);
+        loadCalendars();
+        loadLearning();
+    </script>
+</body>
+</html>
