@@ -26,29 +26,74 @@ Knows: Everyone's calendar     Knows: Just scores
 ## How It Works (30 seconds)
 
 1. **You want to schedule with Alice, Bob, Carol**
-2. **Each person's agent scores time slots privately** — looking at their own calendar
-3. **Scores are sent as hashes** — coordinator can't decode them to times  
-4. **Best time selected** — only YOU (the organizer) learn what it is
+2. **Your agent creates an event with possible time slots, each slot gets a hashed ID**
+3. **Each attendee's agent receives the hash→time mapping, scores each slot privately**
+4. **Attendees send back only hashes + scores** — the Meeting Agent never sees actual times
+5. **Best hash wins** — your agent decrypts it back to the actual time
 
 ```
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│ Alice Agent  │   │  Bob Agent   │   │ Carol Agent  │
-│ (calendar 🔒)│   │ (calendar 🔒)│   │ (calendar 🔒)│
-└──────┬───────┘   └──────┬───────┘   └──────┬───────┘
-       │ hash→85          │ hash→60          │ hash→40
-       └──────────────────┼──────────────────┘
-                          ▼
-              ┌───────────────────────┐
-              │   Meeting Agent       │
-              │ (sees hashes only 🙈) │
-              └───────────┬───────────┘
-                          │ winning hash
-                          ▼
-                   ┌─────────────┐
-                   │  Organizer  │
-                   │ (decrypts)  │
-                   └─────────────┘
+                    ┌─────────────────────────┐
+                    │     Your Agent          │
+                    │  (creates the meeting)  │
+                    └───────────┬─────────────┘
+                                │
+                    ① Create event with slots:
+                       9am, 10am, 11am
+                                │
+                                ▼
+                    ┌─────────────────────────┐
+                    │    Hashing Service      │
+                    │  9am  → "x7f2"          │
+                    │  10am → "abc1"          │
+                    │  11am → "k9p4"          │
+                    └───────────┬─────────────┘
+                                │
+                    ② Send hash↔time map to attendees
+                                │
+        ┌───────────────────────┼───────────────────────┐
+        ▼                       ▼                       ▼
+┌──────────────┐        ┌──────────────┐        ┌──────────────┐
+│ Alice Agent  │        │  Bob Agent   │        │ Carol Agent  │
+│ (calendar 🔒)│        │ (calendar 🔒)│        │ (calendar 🔒)│
+│              │        │              │        │              │
+│ Decodes map, │        │ Decodes map, │        │ Decodes map, │
+│ checks own   │        │ checks own   │        │ checks own   │
+│ calendar     │        │ calendar     │        │ calendar     │
+└──────┬───────┘        └──────┬───────┘        └──────┬───────┘
+       │                       │                       │
+       │ ③ Send scores         │                       │
+       │ (hashes only!)        │                       │
+       │                       │                       │
+       │ "x7f2": 30            │ "x7f2": 50            │ "x7f2": 20
+       │ "abc1": 85            │ "abc1": 60            │ "abc1": 40
+       │ "k9p4": 70            │ "k9p4": 80            │ "k9p4": 90
+       │                       │                       │
+       └───────────────────────┼───────────────────────┘
+                               ▼
+                   ┌───────────────────────┐
+                   │    Meeting Agent      │
+                   │                       │
+                   │ ④ Sums scores:        │
+                   │ "x7f2": 100           │
+                   │ "abc1": 185  ← BEST   │
+                   │ "k9p4": 240           │
+                   │                       │
+                   │ (has no idea what     │
+                   │  these hashes mean!)  │
+                   └───────────┬───────────┘
+                               │
+                   ⑤ Winner: "k9p4"
+                               │
+                               ▼
+                   ┌───────────────────────┐
+                   │     Your Agent        │
+                   │                       │
+                   │ Decrypts: k9p4 = 11am │
+                   │ Books the meeting! 📅 │
+                   └───────────────────────┘
 ```
+
+**The privacy guarantee:** The Meeting Agent orchestrates everything but only ever sees opaque hashes like "abc1". It can do math, pick winners—but never knows it just scheduled an 11am meeting.
 
 ## Quick Start
 
@@ -67,7 +112,85 @@ python seed.py  # Create sample data
 python main.py  # Start server
 ```
 
-**Open http://localhost:8000/app** and schedule your first private meeting!
+**Open http://localhost:8000/app** and explore the two-layer system!
+
+---
+
+## Two Layers, One System
+
+Meeting Safe separates two hard problems into distinct, composable layers:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    INTELLIGENCE LAYER                           │
+│   Each user's agent reasons about THEIR calendar privately      │
+│   • LLM scores slots based on context + learned preferences     │
+│   • Knows: "I reschedule standups for customer calls"           │
+│   • Escalates when uncertain                                    │
+│   • Output: scores per time slot                                │
+└─────────────────────────────────────────────────────────────────┘
+                              │ scores
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     PRIVACY LAYER                               │
+│   Coordination happens WITHOUT revealing calendars              │
+│   • Hash-based slot IDs hide actual times                       │
+│   • Meeting Agent only sees hashes + scores                     │
+│   • Only organizer can decrypt the winning slot                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why separate them?**
+- You could swap the LLM for a dumb "free/busy" checker — privacy still works
+- You could disable hashing for internal use — intelligence still works
+- Each layer has ONE job, making it easier to understand, test, and trust
+
+---
+
+## The Demo: Two Views
+
+### 📅 View 1: Scheduling (Privacy Layer)
+`http://localhost:8000/app`
+
+Watch the hash-based coordination in real-time:
+- **Left panel**: User calendars (private to each agent)
+- **Right panel**: What the Meeting Agent sees (just hashes!)
+- **Result**: Meeting scheduled, privacy preserved
+
+### 🧠 View 2: Intelligence Dashboard
+`http://localhost:8000/app/intelligence`
+
+Explore how each agent makes decisions — tabbed like Excel workbooks:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  [Alice]  [Bob]  [Carol]                                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Alice's Decision Matrix                                        │
+│  ───────────────────────────────────────────────────────────── │
+│  Slot      │ Base │ Conflict    │ Preference │ Final │ Reason  │
+│  ───────────────────────────────────────────────────────────── │
+│  9:00 AM   │  50  │ -30 (1:1)   │ +10 (AM)   │  30   │ Has 1:1 │
+│  10:00 AM  │  50  │ -80 (cust)  │ +10 (AM)   │ -20   │ Customer│
+│  11:00 AM  │  50  │  0          │ -5 (lunch) │  45   │ Open    │
+│  2:00 PM   │  50  │ -20 (team)  │ +15 (pref) │  45   │ Movable │
+│  3:00 PM   │  50  │  0          │ +20 (peak) │  70   │ ⭐ Best │
+│                                                                 │
+│  Learned Preferences:                                           │
+│  • Never reschedule: Customer calls, Board meetings             │
+│  • Will reschedule: Team syncs, Internal 1:1s                   │
+│  • Peak productivity: 2-4pm                                     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Click any user tab to see:
+- **Decision matrix**: How each slot was scored (base, conflicts, preferences)
+- **Learned preferences**: What patterns the agent has learned
+- **Recent decisions**: History of escalations and overrides
+
+---
 
 ## What Makes This Different
 
@@ -104,24 +227,21 @@ meeting-safe/
 │   │   ├── meeting_agent.py      # Hash-based coordination
 │   │   └── hashing_agent.py      # SHA256 time obfuscation
 │   ├── llm_service.py     # Mock LLM (swap to OpenAI)
-│   └── static/index.html  # Demo UI
+│   └── static/
+│       ├── index.html            # Scheduling UI (Privacy Layer)
+│       └── intelligence.html     # Decision Matrix UI (Intelligence Layer)
 └── README.md
 ```
 
-## The Demo
+## Sample Users
 
 The prototype includes 3 users (Alice, Bob, Carol) with realistic calendars:
 
-| User | Profile | Calendar |
-|------|---------|----------|
-| Alice | Busy executive | Customer calls, manager 1:1s, strategic meetings |
-| Bob | Engineer | Focus time, standups, code reviews |
-| Carol | PM | Cross-functional meetings, planning sessions |
-
-Schedule a meeting and watch:
-1. **Left panel**: Each user's calendar (private to them)
-2. **Right panel**: What the Meeting Agent sees (just hashes!)
-3. **Result**: Perfect time found, privacy preserved
+| User | Profile | Calendar Style | Reschedulability |
+|------|---------|----------------|------------------|
+| Alice | Executive | Customer calls, manager 1:1s | Never moves customer calls |
+| Bob | Engineer | Focus time, standups | Protects deep work time |
+| Carol | PM | Cross-functional syncs | Flexible with internal meetings |
 
 ## Deep Dive
 

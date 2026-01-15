@@ -188,3 +188,53 @@ class UserProxyAgent:
         )
         self.db.add(decision)
         self.db.commit()
+
+    def get_learned_preferences(self) -> dict:
+        """
+        Derive preferences from decision history.
+        
+        Returns preferences like:
+        - protect_events: event types the user never reschedules
+        - reschedule_ok: event types the user is willing to move
+        - preferred_times: morning, afternoon, etc.
+        """
+        decisions = self.get_decision_history(limit=50)
+        
+        protect_events = set()
+        reschedule_ok = set()
+        
+        for d in decisions:
+            if d.get("conflicting_type"):
+                if d["user_action"] == "rejected":
+                    # User protected this type of event
+                    protect_events.add(d["conflicting_type"])
+                elif d["user_action"] == "accepted":
+                    # User was willing to reschedule this type
+                    reschedule_ok.add(d["conflicting_type"])
+        
+        # User-specific default preferences (would come from profile in real system)
+        user_prefs = {
+            "alice": {
+                "protect_events": ["customer_call", "external", "board_meeting"],
+                "reschedule_ok": ["team_sync", "internal_1on1", "standup"],
+                "preferred_times": ["morning"]
+            },
+            "bob": {
+                "protect_events": ["focus_time", "deep_work", "external"],
+                "reschedule_ok": ["standup", "team_sync"],
+                "preferred_times": ["morning"]
+            },
+            "carol": {
+                "protect_events": ["external", "customer_call"],
+                "reschedule_ok": ["team_sync", "planning", "internal_1on1"],
+                "preferred_times": ["afternoon"]
+            }
+        }
+        
+        defaults = user_prefs.get(self.user_id, {})
+        
+        return {
+            "protect_events": list(protect_events) or defaults.get("protect_events", []),
+            "reschedule_ok": list(reschedule_ok) or defaults.get("reschedule_ok", []),
+            "preferred_times": defaults.get("preferred_times", [])
+        }

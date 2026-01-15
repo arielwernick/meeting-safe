@@ -44,6 +44,10 @@ if static_dir.exists():
 def serve_app():
     return FileResponse(str(static_dir / "index.html"))
 
+@app.get("/app/intelligence")
+def serve_intelligence():
+    return FileResponse(str(static_dir / "intelligence.html"))
+
 
 # ============= Request/Response Models =============
 
@@ -171,6 +175,14 @@ def record_decision(
         notes=decision.notes
     )
     return {"status": "recorded"}
+
+
+@app.get("/api/users/{user_id}/preferences")
+def get_preferences(user_id: str, db: Session = Depends(get_db)):
+    """Get learned preferences for a user's agent."""
+    agent = UserProxyAgent(user_id, db)
+    preferences = agent.get_learned_preferences()
+    return {"user_id": user_id, "preferences": preferences}
 
 
 # ----- Meeting Scheduling -----

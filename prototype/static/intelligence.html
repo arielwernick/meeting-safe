@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Safe - Intelligence Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Roboto:wght@400;500&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { font-family: 'Google Sans', 'Roboto', sans-serif; }
+        .hash-text { font-family: 'Roboto Mono', monospace; font-size: 0.7rem; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: #f1f3f4; border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+        .shadow-google { box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); }
+        
+        /* Tab styles */
+        .tab-btn { transition: all 0.2s; }
+        .tab-btn.active { 
+            background: white; 
+            border-bottom: 2px solid #4285f4;
+            color: #4285f4;
+        }
+        .tab-btn:not(.active):hover {
+            background: rgba(66, 133, 244, 0.08);
+        }
+        
+        /* Table styles */
+        .decision-table {
+            font-size: 0.75rem;
+        }
+        .decision-table th {
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            z-index: 10;
+        }
+        .decision-table td, .decision-table th {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #e8eaed;
+        }
+        .decision-table tr:hover td {
+            background: #f8f9fa;
+        }
+        
+        /* Score bar */
+        .score-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: #e8eaed;
+            overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/app" class="flex items-center gap-2 text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    <span class="text-sm">Back to Scheduling</span>
+                </a>
+                <span class="text-gray-300">|</span>
+                <div class="flex items-center gap-2">
+                    <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    <span class="text-xl text-gray-700 font-medium">Intelligence Dashboard</span>
+                </div>
+            </div>
+            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                How each agent makes decisions
+            </span>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Architecture Reminder -->
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <span class="text-2xl">🧠</span>
+                <div>
+                    <h3 class="font-medium text-gray-800">Intelligence Layer</h3>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Each user's agent scores time slots based on calendar conflicts, learned preferences, and context.
+                        The Privacy Layer only sees the scores — never the reasoning.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Tabs -->
+        <div class="bg-white rounded-t-lg shadow-google">
+            <div class="flex border-b border-gray-200">
+                <button onclick="switchTab('alice')" id="tab-alice" class="tab-btn active flex-1 py-3 px-4 text-sm font-medium text-gray-600 flex items-center justify-center gap-2">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">A</span>
+                    Alice Chen
+                </button>
+                <button onclick="switchTab('bob')" id="tab-bob" class="tab-btn flex-1 py-3 px-4 text-sm font-medium text-gray-600 flex items-center justify-center gap-2">
+                    <span class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-semibold">B</span>
+                    Bob Smith
+                </button>
+                <button onclick="switchTab('carol')" id="tab-carol" class="tab-btn flex-1 py-3 px-4 text-sm font-medium text-gray-600 flex items-center justify-center gap-2">
+                    <span class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-semibold">C</span>
+                    Carol Jones
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="bg-white rounded-b-lg shadow-google">
+            <div id="tab-content" class="p-6">
+                <!-- Dynamic content loaded here -->
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 bg-white rounded-lg shadow-google p-4">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Score Legend</h4>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded bg-green-500"></div>
+                    <span>FREE (base 50)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded bg-blue-500"></div>
+                    <span>WILLING TO MOVE</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded bg-yellow-500"></div>
+                    <span>RELUCTANT</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded bg-red-500"></div>
+                    <span>PROTECT</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded bg-purple-500"></div>
+                    <span>PREFERENCE BOOST</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let currentUser = 'alice';
+        
+        // Get tomorrow's date for scheduling window
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(8, 0, 0, 0);
+        
+        const windowEnd = new Date(tomorrow);
+        windowEnd.setHours(18, 0, 0, 0);
+
+        function toLocalISOString(date) {
+            const pad = n => n.toString().padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
+
+        function switchTab(userId) {
+            currentUser = userId;
+            
+            // Update tab styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`tab-${userId}`).classList.add('active');
+            
+            // Load content
+            loadUserIntelligence(userId);
+        }
+
+        async function loadUserIntelligence(userId) {
+            const content = document.getElementById('tab-content');
+            content.innerHTML = '<div class="text-center py-8 text-gray-500">Loading decision matrix...</div>';
+            
+            try {
+                // Fetch user info, calendar, decisions, and preferences
+                const [userRes, calRes, decisionsRes, prefsRes] = await Promise.all([
+                    fetch(`${API_BASE}/users/${userId}`),
+                    fetch(`${API_BASE}/users/${userId}/calendar?start=${toLocalISOString(tomorrow)}&end=${toLocalISOString(windowEnd)}`),
+                    fetch(`${API_BASE}/users/${userId}/decisions?limit=20`),
+                    fetch(`${API_BASE}/users/${userId}/preferences`)
+                ]);
+                
+                const user = await userRes.json();
+                const calendar = await calRes.json();
+                const decisions = await decisionsRes.json();
+                const preferences = await prefsRes.json();
+                
+                // Generate time slots and score them
+                const slots = generateTimeSlots(tomorrow, windowEnd, 30);
+                const scoredSlots = scoreSlots(slots, calendar.events, preferences);
+                
+                content.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Decision Matrix (main content) -->
+                        <div class="lg:col-span-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-medium text-gray-800">
+                                    ${user.name}'s Decision Matrix
+                                    <span class="text-xs text-gray-400 font-normal ml-2">Tomorrow</span>
+                                </h3>
+                                <button onclick="refreshMatrix('${userId}')" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded transition">
+                                    Refresh
+                                </button>
+                            </div>
+                            
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="max-h-96 overflow-auto scrollbar-thin">
+                                    <table class="decision-table w-full">
+                                        <thead>
+                                            <tr class="text-left text-gray-600">
+                                                <th class="w-20">Time</th>
+                                                <th class="w-16">Base</th>
+                                                <th>Conflict</th>
+                                                <th class="w-20">Adj</th>
+                                                <th class="w-20">Pref</th>
+                                                <th class="w-20">Final</th>
+                                                <th class="w-28">Decision</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${scoredSlots.map(slot => renderSlotRow(slot)).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sidebar -->
+                        <div class="space-y-4">
+                            <!-- Learned Preferences -->
+                            <div class="bg-purple-50 border border-purple-100 rounded-lg p-4">
+                                <h4 class="font-medium text-purple-800 mb-3 flex items-center gap-2">
+                                    <span>📚</span> Learned Preferences
+                                </h4>
+                                ${renderPreferences(preferences)}
+                            </div>
+                            
+                            <!-- Recent Decisions -->
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-700 mb-3 flex items-center gap-2">
+                                    <span>📋</span> Recent Decisions
+                                </h4>
+                                ${renderDecisionHistory(decisions.decisions)}
+                            </div>
+                            
+                            <!-- Calendar Summary -->
+                            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                                <h4 class="font-medium text-blue-800 mb-3 flex items-center gap-2">
+                                    <span>📅</span> Tomorrow's Calendar
+                                </h4>
+                                ${renderCalendarSummary(calendar.events)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Failed to load intelligence:', err);
+                content.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-red-500">Failed to load data</p>
+                        <p class="text-gray-400 text-sm mt-2">${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function generateTimeSlots(start, end, durationMins) {
+            const slots = [];
+            const current = new Date(start);
+            while (current < end) {
+                slots.push({
+                    time: new Date(current),
+                    label: current.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})
+                });
+                current.setMinutes(current.getMinutes() + durationMins);
+            }
+            return slots;
+        }
+
+        function scoreSlots(slots, events, preferences) {
+            const prefs = preferences.preferences || {};
+            const protectTypes = prefs.protect_events || [];
+            const rescheduleTypes = prefs.reschedule_ok || [];
+            const preferredTimes = prefs.preferred_times || [];
+            
+            return slots.map(slot => {
+                const slotStart = slot.time;
+                const slotEnd = new Date(slotStart.getTime() + 30 * 60000);
+                
+                // Find conflicting event
+                const conflict = events.find(e => {
+                    const eventStart = new Date(e.start_time);
+                    const eventEnd = new Date(e.end_time);
+                    return slotStart < eventEnd && slotEnd > eventStart;
+                });
+                
+                let base = 50;
+                let adjustment = 0;
+                let prefBonus = 0;
+                let decision = 'FREE';
+                let decisionColor = 'bg-green-500';
+                let reason = 'Open slot';
+                
+                if (conflict) {
+                    const eventType = conflict.event_type || 'meeting';
+                    const importance = conflict.importance || 5;
+                    
+                    if (protectTypes.includes(eventType) || conflict.external || importance >= 8) {
+                        decision = 'PROTECT';
+                        decisionColor = 'bg-red-500';
+                        adjustment = -100;
+                        reason = `Protected: ${conflict.title}`;
+                    } else if (rescheduleTypes.includes(eventType)) {
+                        decision = 'WILLING';
+                        decisionColor = 'bg-blue-500';
+                        adjustment = -20;
+                        reason = `Would move: ${conflict.title}`;
+                    } else {
+                        decision = 'RELUCTANT';
+                        decisionColor = 'bg-yellow-500';
+                        adjustment = -40 - (importance * 3);
+                        reason = `Has: ${conflict.title}`;
+                    }
+                }
+                
+                // Apply time preferences
+                const hour = slotStart.getHours();
+                if (preferredTimes.includes('morning') && hour >= 8 && hour < 12) {
+                    prefBonus = 10;
+                } else if (preferredTimes.includes('afternoon') && hour >= 13 && hour < 17) {
+                    prefBonus = 10;
+                }
+                
+                const finalScore = Math.max(0, base + adjustment + prefBonus);
+                
+                return {
+                    ...slot,
+                    base,
+                    conflict,
+                    adjustment,
+                    prefBonus,
+                    final: finalScore,
+                    decision,
+                    decisionColor,
+                    reason
+                };
+            });
+        }
+
+        function renderSlotRow(slot) {
+            const barWidth = Math.min(100, (slot.final / 60) * 100);
+            const barColor = slot.decision === 'FREE' ? 'bg-green-500' :
+                             slot.decision === 'WILLING' ? 'bg-blue-500' :
+                             slot.decision === 'RELUCTANT' ? 'bg-yellow-500' : 'bg-red-500';
+            
+            return `
+                <tr class="${slot.decision === 'PROTECT' ? 'bg-red-50' : slot.decision === 'FREE' ? 'bg-green-50/30' : ''}">
+                    <td class="font-medium text-gray-800">${slot.label}</td>
+                    <td class="text-gray-500">${slot.base}</td>
+                    <td class="text-gray-600">
+                        ${slot.conflict ? `
+                            <span class="inline-flex items-center gap-1">
+                                <span class="truncate max-w-32" title="${slot.conflict.title}">${slot.conflict.title}</span>
+                                <span class="text-gray-400 text-[10px]">(${slot.conflict.importance}/10)</span>
+                            </span>
+                        ` : '<span class="text-gray-300">—</span>'}
+                    </td>
+                    <td class="${slot.adjustment < 0 ? 'text-red-600' : 'text-gray-400'}">
+                        ${slot.adjustment !== 0 ? slot.adjustment : '—'}
+                    </td>
+                    <td class="${slot.prefBonus > 0 ? 'text-purple-600 font-medium' : 'text-gray-400'}">
+                        ${slot.prefBonus > 0 ? '+' + slot.prefBonus : '—'}
+                    </td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold ${slot.final > 40 ? 'text-green-700' : slot.final > 20 ? 'text-yellow-700' : 'text-red-700'}">${slot.final}</span>
+                            <div class="score-bar w-12">
+                                <div class="score-bar-fill ${barColor}" style="width: ${barWidth}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${
+                            slot.decision === 'FREE' ? 'bg-green-100 text-green-700' :
+                            slot.decision === 'WILLING' ? 'bg-blue-100 text-blue-700' :
+                            slot.decision === 'RELUCTANT' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                        }">
+                            ${slot.decision === 'FREE' ? '✓' : slot.decision === 'WILLING' ? '↺' : slot.decision === 'RELUCTANT' ? '?' : '🛡'}
+                            ${slot.decision}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function renderPreferences(preferences) {
+            const prefs = preferences.preferences || {};
+            
+            if (Object.keys(prefs).length === 0) {
+                return '<p class="text-sm text-gray-500 italic">No preferences learned yet</p>';
+            }
+            
+            let html = '<div class="space-y-2 text-sm">';
+            
+            if (prefs.protect_events && prefs.protect_events.length > 0) {
+                html += `
+                    <div class="flex items-start gap-2">
+                        <span class="text-red-500">🛡</span>
+                        <div>
+                            <span class="font-medium text-gray-700">Never reschedule:</span>
+                            <span class="text-gray-600">${prefs.protect_events.join(', ')}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (prefs.reschedule_ok && prefs.reschedule_ok.length > 0) {
+                html += `
+                    <div class="flex items-start gap-2">
+                        <span class="text-green-500">↺</span>
+                        <div>
+                            <span class="font-medium text-gray-700">Will reschedule:</span>
+                            <span class="text-gray-600">${prefs.reschedule_ok.join(', ')}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (prefs.preferred_times && prefs.preferred_times.length > 0) {
+                html += `
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-500">⏰</span>
+                        <div>
+                            <span class="font-medium text-gray-700">Prefers:</span>
+                            <span class="text-gray-600">${prefs.preferred_times.join(', ')}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        function renderDecisionHistory(decisions) {
+            if (!decisions || decisions.length === 0) {
+                return '<p class="text-sm text-gray-500 italic">No decisions recorded yet</p>';
+            }
+            
+            return `
+                <div class="space-y-2 max-h-48 overflow-y-auto scrollbar-thin">
+                    ${decisions.slice(0, 10).map(d => `
+                        <div class="flex items-start gap-2 text-xs p-2 rounded ${
+                            d.user_action === 'accepted' || d.user_action === 'selected' ? 'bg-green-100' : 'bg-red-100'
+                        }">
+                            <span class="${d.user_action === 'accepted' || d.user_action === 'selected' ? 'text-green-600' : 'text-red-600'} mt-0.5">
+                                ${d.user_action === 'accepted' || d.user_action === 'selected' ? '✓' : '✗'}
+                            </span>
+                            <span class="text-gray-700">
+                                ${d.user_action === 'accepted' ? 'Moved' : d.user_action === 'selected' ? 'Selected' : 'Protected'}
+                                <span class="font-medium">${d.conflicting_type || 'slot'}</span>
+                                ${d.meeting_type ? `for ${d.meeting_type}` : ''}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderCalendarSummary(events) {
+            if (!events || events.length === 0) {
+                return '<p class="text-sm text-gray-500 italic">No events tomorrow</p>';
+            }
+            
+            return `
+                <div class="space-y-1 max-h-40 overflow-y-auto scrollbar-thin">
+                    ${events.map(e => {
+                        const start = new Date(e.start_time);
+                        const borderColor = e.external ? 'border-red-400' : 
+                                          e.event_type === 'focus_time' ? 'border-green-400' : 'border-blue-400';
+                        return `
+                            <div class="text-xs bg-white border-l-2 ${borderColor} pl-2 py-1">
+                                <span class="text-gray-400">${start.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})}</span>
+                                <span class="text-gray-700 ml-1">${e.title}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function refreshMatrix(userId) {
+            loadUserIntelligence(userId);
+        }
+
+        // Initialize
+        loadUserIntelligence('alice');
+    </script>
+</body>
+</html>

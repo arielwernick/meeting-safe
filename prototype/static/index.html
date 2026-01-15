@@ -24,14 +24,22 @@
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-            <div class="flex items-center gap-2">
-                <svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7zm0 1.2c-.8 0-1.5.7-1.5 1.5V11h3V9.7c0-.8-.7-1.5-1.5-1.5z"/>
-                </svg>
-                <span class="text-xl text-gray-700 font-medium">Meeting Safe</span>
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.8 1.1 2.8 2.5V11c.6 0 1.2.6 1.2 1.3v3.5c0 .6-.6 1.2-1.3 1.2H9.2c-.6 0-1.2-.6-1.2-1.3v-3.5c0-.6.6-1.2 1.2-1.2V9.5C9.2 8.1 10.6 7 12 7zm0 1.2c-.8 0-1.5.7-1.5 1.5V11h3V9.7c0-.8-.7-1.5-1.5-1.5z"/>
+                    </svg>
+                    <span class="text-xl text-gray-700 font-medium">Meeting Safe</span>
+                </div>
+                <span class="text-sm text-gray-500 ml-2">Privacy-Preserving Scheduler</span>
             </div>
-            <span class="text-sm text-gray-500 ml-2">Privacy-Preserving Scheduler</span>
+            <a href="/app/intelligence" class="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                </svg>
+                Intelligence Dashboard
+            </a>
         </div>
     </header>
 
@@ -167,48 +175,6 @@
                     </div>
                 </div>
 
-                <!-- Learned Preferences -->
-                <div class="bg-white rounded-lg shadow-google p-5">
-                    <div class="flex items-center gap-2 mb-3">
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                        </svg>
-                        <h2 class="text-base font-medium text-gray-800">Learned Preferences</h2>
-                    </div>
-                    <div id="learningPanel" class="space-y-2">
-                        <p class="text-sm text-gray-500 italic">Loading...</p>
-                    </div>
-                </div>
-
-                <!-- Decision Reasoning Panel (NEW!) -->
-                <div id="decisionReasoningPanel" class="hidden bg-white rounded-lg shadow-google p-5 border-l-4 border-purple-500">
-                    <div class="flex items-center gap-2 mb-3">
-                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                        </svg>
-                        <h2 class="text-base font-medium text-gray-800">🧠 How Preferences Affected This Decision</h2>
-                    </div>
-                    <div id="decisionReasoningContent" class="space-y-3 text-sm"></div>
-                </div>
-
-                <!-- Naive vs Intelligent Comparison -->
-                <div class="bg-white rounded-lg shadow-google p-5">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                            <h2 class="text-base font-medium text-gray-800">Naive vs Intelligent</h2>
-                        </div>
-                        <button onclick="loadComparison()" class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100">
-                            Compare
-                        </button>
-                    </div>
-                    <div id="comparisonPanel" class="text-sm">
-                        <p class="text-gray-500 italic text-xs">Click "Compare" to see how learning improves scheduling</p>
-                    </div>
-                </div>
-
                 <!-- Result Panel -->
                 <div id="resultPanel" class="hidden bg-white rounded-lg shadow-google border-l-4 border-green-500 p-5">
                     <div class="flex items-center gap-2 mb-2">
@@ -314,34 +280,6 @@
             }
         }
 
-        // Load learning history
-        async function loadLearning() {
-            try {
-                const res = await fetch(`${API_BASE}/users/alice/decisions`);
-                const data = await res.json();
-                
-                const panel = document.getElementById('learningPanel');
-                if (data.decisions.length === 0) {
-                    panel.innerHTML = '<p class="text-sm text-gray-500 italic">No decisions recorded yet</p>';
-                } else {
-                    panel.innerHTML = data.decisions.map(d => `
-                        <div class="flex items-start gap-2 text-xs p-2 rounded ${d.user_action === 'accepted' || d.user_action === 'selected' ? 'bg-green-50' : 'bg-red-50'}">
-                            <span class="${d.user_action === 'accepted' || d.user_action === 'selected' ? 'text-green-500' : 'text-red-500'} mt-0.5">
-                                ${d.user_action === 'accepted' || d.user_action === 'selected' ? '✓' : '✗'}
-                            </span>
-                            <span class="text-gray-700">
-                                ${d.user_action === 'accepted' ? 'Rescheduled' : d.user_action === 'selected' ? 'Selected' : 'Protected'} 
-                                <span class="font-medium text-blue-600">${d.conflicting_type || 'time slot'}</span>
-                                ${d.meeting_type ? `for <span class="font-medium text-purple-600">${d.meeting_type}</span>` : ''}
-                            </span>
-                        </div>
-                    `).join('');
-                }
-            } catch (err) {
-                console.error('Failed to load learning:', err);
-            }
-        }
-
         // Schedule meeting
         async function scheduleMeeting(e) {
             e.preventDefault();
@@ -412,193 +350,6 @@
                     `).join('')}
                 </div>
             `;
-            
-            // NEW: Display the decision reasoning panel
-            displayDecisionReasoning(result);
-        }
-
-        // NEW: Display the decision reasoning showing HOW preferences affected the decision
-        function displayDecisionReasoning(result) {
-            const panel = document.getElementById('decisionReasoningPanel');
-            const content = document.getElementById('decisionReasoningContent');
-            const participantViews = result.meeting_agent_view?.participant_utilities || [];
-            
-            // Collect all preferences applied and slot breakdowns
-            let allPreferencesApplied = [];
-            let allSlotBreakdowns = [];
-            
-            participantViews.forEach(pv => {
-                if (pv.preferences_applied && pv.preferences_applied.length > 0) {
-                    allPreferencesApplied.push({
-                        user: pv.user_id,
-                        preferences: pv.preferences_applied
-                    });
-                }
-                if (pv.slot_breakdown && pv.slot_breakdown.length > 0) {
-                    allSlotBreakdowns.push({
-                        user: pv.user_id,
-                        breakdown: pv.slot_breakdown
-                    });
-                }
-            });
-            
-            if (allPreferencesApplied.length === 0 && allSlotBreakdowns.length === 0) {
-                panel.classList.add('hidden');
-                return;
-            }
-            
-            panel.classList.remove('hidden');
-            
-            let html = '';
-            
-            // Show preferences that were applied
-            if (allPreferencesApplied.length > 0) {
-                html += `
-                    <div class="bg-purple-50 border border-purple-100 rounded-lg p-3">
-                        <h4 class="text-xs font-semibold text-purple-700 mb-2">📚 Learned Preferences Applied</h4>
-                        <div class="space-y-1">
-                            ${allPreferencesApplied.map(pa => 
-                                pa.preferences.map(p => `
-                                    <div class="flex items-center gap-2 text-xs">
-                                        <span class="text-purple-500">✓</span>
-                                        <span class="text-purple-800 font-medium">${pa.user}:</span>
-                                        <span class="text-gray-700">${p.source} → ${p.effect}</span>
-                                    </div>
-                                `).join('')
-                            ).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Show detailed slot breakdown for interesting decisions
-            const interestingSlots = allSlotBreakdowns.flatMap(sb => 
-                sb.breakdown.filter(s => s.decision && s.decision !== 'FREE' && s.conflict)
-                    .map(s => ({...s, user: sb.user}))
-            ).slice(0, 4);  // Limit to 4 most interesting
-            
-            if (interestingSlots.length > 0) {
-                html += `
-                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3 mt-2">
-                        <h4 class="text-xs font-semibold text-gray-700 mb-2">🔍 Slot-by-Slot Reasoning</h4>
-                        <div class="space-y-2">
-                            ${interestingSlots.map(slot => {
-                                const decisionColor = slot.decision === 'PROTECT' ? 'bg-red-100 text-red-700' :
-                                    slot.decision === 'WILLING_TO_RESCHEDULE' ? 'bg-green-100 text-green-700' :
-                                    slot.decision === 'RELUCTANT' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-gray-100 text-gray-700';
-                                
-                                return `
-                                    <div class="border border-gray-200 rounded p-2 bg-white">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-xs font-medium text-gray-800">${slot.time} (${slot.user})</span>
-                                            <span class="text-xs px-2 py-0.5 rounded ${decisionColor}">${slot.decision}</span>
-                                        </div>
-                                        ${slot.conflict ? `
-                                            <div class="text-[11px] text-gray-600 mb-1">
-                                                Conflict: <span class="font-medium">${slot.conflict.title}</span>
-                                                <span class="text-gray-400">(${slot.conflict.event_type}, imp: ${slot.conflict.importance}/10)</span>
-                                            </div>
-                                        ` : ''}
-                                        <div class="text-[11px] text-gray-500">
-                                            ${slot.factors && slot.factors.length > 0 
-                                                ? slot.factors.map(f => `<div class="flex items-center gap-1">
-                                                    <span class="${f.type === 'learned_preference' ? 'text-purple-600' : 'text-gray-500'}">→</span>
-                                                    <span class="${f.type === 'learned_preference' ? 'text-purple-700 font-medium' : ''}">${f.reason}</span>
-                                                </div>`).join('')
-                                                : `<div>→ ${slot.decision_reason}</div>`
-                                            }
-                                        </div>
-                                        <div class="text-right text-xs text-gray-400 mt-1">Score: ${slot.score}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            content.innerHTML = html;
-        }
-
-        // NEW: Load naive vs intelligent comparison
-        async function loadComparison() {
-            const panel = document.getElementById('comparisonPanel');
-            panel.innerHTML = '<p class="text-gray-500 text-xs">Loading comparison...</p>';
-            
-            try {
-                const res = await fetch(`${API_BASE}/demo/naive-vs-intelligent?user_id=alice`);
-                const data = await res.json();
-                
-                const naive = data.comparison.naive;
-                const intelligent = data.comparison.intelligent;
-                
-                panel.innerHTML = `
-                    <div class="space-y-3">
-                        <div class="text-xs text-center py-2 bg-indigo-50 rounded-lg">
-                            <span class="text-indigo-700 font-medium">${data.insight}</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-2">
-                            <!-- Naive Column -->
-                            <div class="border border-red-100 rounded-lg p-2 bg-red-50">
-                                <div class="text-[11px] font-semibold text-red-700 mb-2 flex items-center gap-1">
-                                    <span>❌</span> Naive (${naive.available_slots} slots)
-                                </div>
-                                <div class="space-y-1 max-h-32 overflow-y-auto scrollbar-thin">
-                                    ${naive.slots.slice(0, 6).map(s => `
-                                        <div class="text-[10px] flex items-center gap-1 ${s.status === 'FREE' ? 'text-green-600' : 'text-red-600'}">
-                                            <span>${s.status === 'FREE' ? '✓' : '✗'}</span>
-                                            <span>${s.time}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            
-                            <!-- Intelligent Column -->
-                            <div class="border border-green-100 rounded-lg p-2 bg-green-50">
-                                <div class="text-[11px] font-semibold text-green-700 mb-2 flex items-center gap-1">
-                                    <span>🧠</span> Smart (${intelligent.available_slots} options)
-                                </div>
-                                <div class="space-y-1 max-h-32 overflow-y-auto scrollbar-thin">
-                                    ${intelligent.slots.slice(0, 6).map(s => {
-                                        const color = s.status === 'FREE' ? 'text-green-600' :
-                                            s.status === 'RESCHEDULE_OK' ? 'text-blue-600' :
-                                            s.status === 'RELUCTANT' ? 'text-yellow-600' :
-                                            'text-red-600';
-                                        const icon = s.status === 'FREE' ? '✓' :
-                                            s.status === 'RESCHEDULE_OK' ? '↺' :
-                                            s.status === 'RELUCTANT' ? '?' :
-                                            '✗';
-                                        return `
-                                            <div class="text-[10px] ${color}" title="${s.reason}">
-                                                <span>${icon}</span>
-                                                <span>${s.time}</span>
-                                                ${s.status !== 'FREE' && s.status !== 'PROTECT' ? `<span class="text-gray-400 text-[9px]">${s.status}</span>` : ''}
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        ${intelligent.preferences_used && intelligent.preferences_used.length > 0 ? `
-                            <div class="text-[10px] text-gray-500 border-t border-gray-200 pt-2">
-                                <div class="font-medium text-gray-600 mb-1">Preferences Used:</div>
-                                ${intelligent.preferences_used.filter(p => p.event_types.length > 0).map(p => `
-                                    <div class="flex items-center gap-1">
-                                        <span class="${p.type === 'protect' ? 'text-red-500' : 'text-green-500'}">${p.type === 'protect' ? '🛡' : '↺'}</span>
-                                        <span>${p.type}: ${p.event_types.join(', ') || 'none'}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            } catch (err) {
-                console.error('Comparison failed:', err);
-                panel.innerHTML = '<p class="text-red-500 text-xs">Failed to load comparison</p>';
-            }
         }
 
         function displayResult(result) {
@@ -694,14 +445,12 @@
                 <p class="text-xs text-green-600 mt-2">✓ You selected this time</p>
             `;
             
-            await loadLearning();
             await loadCalendars();
         }
 
         // Initialize
         document.getElementById('meetingForm').addEventListener('submit', scheduleMeeting);
         loadCalendars();
-        loadLearning();
     </script>
 </body>
 </html>
