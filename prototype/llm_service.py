@@ -4,6 +4,8 @@ LLM Integration for Scheduling Intelligence
 Supports two modes:
 - "mock": Returns deterministic responses for testing
 - "openai": Calls OpenAI API for real LLM reasoning
+
+Key Feature: Rich explainability showing HOW preferences affect decisions.
 """
 from datetime import datetime
 from typing import Optional
@@ -46,8 +48,16 @@ Consider:
 Output JSON only:
 {{
   "utilities": {{"slot_id": score, ...}},
-  "reasoning": "brief explanation of key decisions"
-}}"""
+  "reasoning": "brief explanation of key decisions",
+  "slot_breakdown": [
+    {{
+      "slot_id": "hash",
+      "score": 65,
+      "decision": "WILLING_TO_RESCHEDULE or PROTECT or FREE",
+      "factors": ["factor1", "factor2"]
+    }}
+  ]
+}}"""""
 
 
 def build_slot_details(slots: list[dict]) -> str:
@@ -82,7 +92,11 @@ def build_preferences(decisions: list[SchedulingDecision]) -> str:
 
 
 class MockLLM:
-    """Deterministic mock LLM for testing."""
+    """
+    Deterministic mock LLM for testing.
+    
+    Provides RICH EXPLAINABILITY showing exactly how preferences affect scoring.
+    """
     
     def calculate_utilities(
         self,
@@ -93,7 +107,7 @@ class MockLLM:
         decisions: list[dict]
     ) -> dict:
         """
-        Mock utility calculation with realistic logic.
+        Mock utility calculation with realistic logic and rich explanations.
         
         Rules:
         - Free slots get base score 80
@@ -104,63 +118,202 @@ class MockLLM:
           - Medium importance (5-7): reluctant (score 30)
           - High importance (8-10): protect (score 10)
         - Apply learned preferences from history
+        
+        Returns rich breakdown showing WHY each score was assigned.
         """
         utilities = {}
         reasoning_parts = []
+        slot_breakdown = []
+        preferences_applied = []
         
         # Build preference modifiers from history
-        protect_types = set()
-        reschedule_types = set()
+        protect_types = {}  # type -> decision that caused it
+        reschedule_types = {}  # type -> decision that caused it
         for d in decisions:
             if d.get("user_action") == "rejected" and d.get("conflicting_type"):
-                protect_types.add(d["conflicting_type"])
+                protect_types[d["conflicting_type"]] = d
             elif d.get("user_action") == "accepted" and d.get("conflicting_type"):
-                reschedule_types.add(d["conflicting_type"])
+                reschedule_types[d["conflicting_type"]] = d
         
         for slot in slots:
             slot_id = slot["hash"]
             time_obj = datetime.fromisoformat(slot["time"]) if isinstance(slot["time"], str) else slot["time"]
             hour = time_obj.hour
+            time_str = time_obj.strftime("%I:%M %p")
+            
+            factors = []
             
             if slot["status"] == "free":
                 # Base score for free slot
-                score = 80
+                base_score = 80
+                score = base_score
+                factors.append({
+                    "type": "base_free",
+                    "value": 80,
+                    "reason": "Slot is free"
+                })
                 
                 # Time of day preference
                 if 9 <= hour <= 11:
                     score += 10
-                    reasoning_parts.append(f"Morning slot {hour}:00 gets bonus")
+                    factors.append({
+                        "type": "time_preference",
+                        "value": +10,
+                        "reason": "Morning slot (9-11 AM) preferred"
+                    })
+                    reasoning_parts.append(f"Morning slot {time_str} gets bonus")
                 elif 12 <= hour <= 13:
-                    score -= 10  # Lunch penalty
+                    score -= 10
+                    factors.append({
+                        "type": "time_preference", 
+                        "value": -10,
+                        "reason": "Lunch hour penalty"
+                    })
+                
+                slot_breakdown.append({
+                    "slot_id": slot_id,
+                    "time": time_str,
+                    "score": score,
+                    "base_score": base_score,
+                    "status": "FREE",
+                    "conflict": None,
+                    "factors": factors,
+                    "decision": "AVAILABLE",
+                    "decision_reason": f"No conflicts at {time_str}"
+                })
                 
             else:
                 # Conflict - evaluate if willing to reschedule
                 event = slot["conflict_event"]
+                event_type = event.get("event_type", "meeting")
+                importance = event.get("importance", 5)
+                is_external = event.get("external", False)
+                
+                conflict_info = {
+                    "title": event.get("title", "Unknown"),
+                    "event_type": event_type,
+                    "importance": importance,
+                    "external": is_external
+                }
                 
                 # Never reschedule external meetings
-                if event.get("external", False):
+                if is_external:
                     score = 0
-                    reasoning_parts.append(f"Protecting external meeting at {hour}:00")
-                else:
-                    importance = event.get("importance", 5)
-                    event_type = event.get("event_type", "meeting")
+                    factors.append({
+                        "type": "external_protection",
+                        "value": 0,
+                        "reason": f"NEVER reschedule external meeting: {event.get('title')}"
+                    })
+                    reasoning_parts.append(f"Protecting external meeting at {time_str}")
                     
-                    # Check learned preferences
+                    slot_breakdown.append({
+                        "slot_id": slot_id,
+                        "time": time_str,
+                        "score": 0,
+                        "base_score": 0,
+                        "status": "CONFLICT",
+                        "conflict": conflict_info,
+                        "factors": factors,
+                        "decision": "PROTECT",
+                        "decision_reason": "External/customer meetings are never rescheduled"
+                    })
+                else:
+                    # Check learned preferences FIRST
                     if event_type in protect_types:
                         score = 5
+                        source_decision = protect_types[event_type]
+                        factors.append({
+                            "type": "learned_preference",
+                            "value": 5,
+                            "reason": f"🧠 LEARNED: User previously REJECTED rescheduling {event_type}"
+                        })
                         reasoning_parts.append(f"Learned: protect {event_type}")
+                        preferences_applied.append({
+                            "preference": f"protect_{event_type}",
+                            "effect": "Score reduced to 5",
+                            "source": f"User rejected rescheduling {event_type}"
+                        })
+                        
+                        slot_breakdown.append({
+                            "slot_id": slot_id,
+                            "time": time_str,
+                            "score": score,
+                            "base_score": 0,
+                            "status": "CONFLICT",
+                            "conflict": conflict_info,
+                            "factors": factors,
+                            "decision": "PROTECT",
+                            "decision_reason": f"Learned preference: user protects {event_type} meetings"
+                        })
+                        
                     elif event_type in reschedule_types:
                         score = 65
+                        source_decision = reschedule_types[event_type]
+                        factors.append({
+                            "type": "learned_preference",
+                            "value": 65,
+                            "reason": f"🧠 LEARNED: User previously ACCEPTED rescheduling {event_type}"
+                        })
                         reasoning_parts.append(f"Learned: willing to reschedule {event_type}")
+                        preferences_applied.append({
+                            "preference": f"reschedule_{event_type}",
+                            "effect": "Score boosted to 65",
+                            "source": f"User accepted rescheduling {event_type}"
+                        })
+                        
+                        slot_breakdown.append({
+                            "slot_id": slot_id,
+                            "time": time_str,
+                            "score": score,
+                            "base_score": 0,
+                            "status": "CONFLICT",
+                            "conflict": conflict_info,
+                            "factors": factors,
+                            "decision": "WILLING_TO_RESCHEDULE",
+                            "decision_reason": f"Learned preference: user accepts rescheduling {event_type}"
+                        })
                     else:
                         # Default importance-based scoring
                         if importance <= 4:
                             score = 60
+                            factors.append({
+                                "type": "importance_score",
+                                "value": 60,
+                                "reason": f"Low importance ({importance}/10) - willing to reschedule"
+                            })
+                            decision = "WILLING_TO_RESCHEDULE"
+                            decision_reason = f"Low importance meeting ({importance}/10)"
                         elif importance <= 7:
                             score = 30
+                            factors.append({
+                                "type": "importance_score",
+                                "value": 30,
+                                "reason": f"Medium importance ({importance}/10) - reluctant to reschedule"
+                            })
+                            decision = "RELUCTANT"
+                            decision_reason = f"Medium importance meeting ({importance}/10)"
                         else:
                             score = 10
-                            reasoning_parts.append(f"High importance meeting at {hour}:00")
+                            factors.append({
+                                "type": "importance_score",
+                                "value": 10,
+                                "reason": f"High importance ({importance}/10) - strongly protect"
+                            })
+                            reasoning_parts.append(f"High importance meeting at {time_str}")
+                            decision = "PROTECT"
+                            decision_reason = f"High importance meeting ({importance}/10)"
+                            
+                        slot_breakdown.append({
+                            "slot_id": slot_id,
+                            "time": time_str,
+                            "score": score,
+                            "base_score": 0,
+                            "status": "CONFLICT",
+                            "conflict": conflict_info,
+                            "factors": factors,
+                            "decision": decision,
+                            "decision_reason": decision_reason
+                        })
             
             utilities[slot_id] = score
         
@@ -168,12 +321,14 @@ class MockLLM:
         
         return {
             "utilities": utilities,
-            "reasoning": reasoning
+            "reasoning": reasoning,
+            "slot_breakdown": slot_breakdown,
+            "preferences_applied": preferences_applied
         }
 
 
 class OpenAILLM:
-    """Real OpenAI LLM integration."""
+    """Real OpenAI LLM integration with rich explainability."""
     
     def __init__(self):
         if not config.OPENAI_API_KEY:
@@ -191,7 +346,7 @@ class OpenAILLM:
         slots: list[dict],
         decisions: list[dict]
     ) -> dict:
-        """Call OpenAI to calculate utilities."""
+        """Call OpenAI to calculate utilities with rich reasoning."""
         
         # Build slot details
         slot_details = build_slot_details(slots)
@@ -215,7 +370,7 @@ class OpenAILLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a scheduling assistant. Output only valid JSON."},
+                {"role": "system", "content": "You are a scheduling assistant. Output only valid JSON with utilities, reasoning, and slot_breakdown."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.3,
@@ -223,6 +378,13 @@ class OpenAILLM:
         )
         
         result = json.loads(response.choices[0].message.content)
+        
+        # Ensure we have the expected structure
+        if "preferences_applied" not in result:
+            result["preferences_applied"] = []
+        if "slot_breakdown" not in result:
+            result["slot_breakdown"] = []
+            
         return result
 
 

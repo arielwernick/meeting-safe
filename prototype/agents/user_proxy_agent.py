@@ -139,7 +139,9 @@ class UserProxyAgent:
             utilities=utilities,
             escalate=escalate,
             escalation_reason=reason,
-            reasoning=result.get("reasoning")
+            reasoning=result.get("reasoning"),
+            slot_breakdown=result.get("slot_breakdown", []),
+            preferences_applied=result.get("preferences_applied", [])
         )
     
     def _should_escalate(self, utilities: dict[str, int]) -> tuple[bool, Optional[str]]:

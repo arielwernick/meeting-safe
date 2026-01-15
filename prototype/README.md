@@ -1,63 +1,73 @@
-# Meeting Safe Prototype
+# Prototype Implementation
 
-Privacy-preserving multi-agent meeting scheduler.
+This is the working prototype demonstrating the privacy-preserving scheduling architecture.
 
 ## Quick Start
 
 ```bash
-cd prototype
-
-# Create virtual environment
+# From meeting-safe/prototype directory
 python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Mac/Linux
-
-# Install dependencies
+.\venv\Scripts\Activate.ps1  # Windows
 pip install -r requirements.txt
 
-# Seed the database
-python seed.py
-
-# Run the server
-python main.py
+python seed.py  # Create sample users & calendars
+python main.py  # Start server on http://localhost:8000
 ```
 
-Then open: **http://localhost:8000/app**
+Open **http://localhost:8000/app** to use the demo.
 
-## What It Demonstrates
+## What's Implemented
 
-1. **Gated Access**: Each User Proxy Agent only sees its own calendar
-2. **Privacy via Hashing**: Meeting Agent sees hashes, never times
-3. **LLM Intelligence**: Smart scheduling (currently mocked, swap to real LLM)
-4. **Learning**: Records decisions and applies preferences to future scheduling
-5. **Escalation**: Asks user when uncertain
+| Feature | Status | Details |
+|---------|--------|---------|
+| Three-agent architecture | ✅ | User Proxy, Meeting Agent, Hashing Agent |
+| Hash-based privacy | ✅ | SHA256 with meeting_id salt |
+| Utility calculation | ✅ | Mock LLM with deterministic scoring |
+| Learning/preferences | ✅ | Decision history recorded, applied to future |
+| Escalation | ✅ | Triggers when scores too close |
+| Web UI | ✅ | Shows calendars, agent view, results |
 
-## Using Real LLM
+## Configuration
 
-1. Copy `.env.example` to `.env`
-2. Add your OpenAI API key
-3. Set `LLM_MODE=openai`
-4. Restart the server
+Copy `.env.example` to `.env` to configure:
 
-## Project Structure
-
-```
-prototype/
-├── main.py              # FastAPI server
-├── config.py            # Configuration (API keys, etc.)
-├── models.py            # Pydantic models
-├── database.py          # SQLite database
-├── seed.py              # Sample data
-├── llm_service.py       # LLM integration (mock + OpenAI)
-├── agents/
-│   ├── hashing_agent.py    # Cryptographic hashing
-│   ├── meeting_agent.py    # Coordination logic
-│   └── user_proxy_agent.py # Individual calendar + utilities
-└── static/
-    └── index.html       # Demo UI
+```bash
+LLM_MODE=mock     # or "openai" for real GPT-4
+OPENAI_API_KEY=   # Required if LLM_MODE=openai
 ```
 
-## API Endpoints
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `main.py` | FastAPI server, all endpoints |
+| `agents/user_proxy_agent.py` | Calendar access + utility calculation |
+| `agents/meeting_agent.py` | Coordination logic (sees only hashes) |
+| `agents/hashing_agent.py` | SHA256 time→hash conversion |
+| `llm_service.py` | Mock LLM + OpenAI integration |
+| `seed.py` | Sample data: Alice, Bob, Carol calendars |
+| `static/index.html` | Single-page demo UI |
+
+## API Reference
+
+```
+GET  /api/users                      # List all users
+GET  /api/users/{id}/calendar        # Get user's calendar
+GET  /api/users/{id}/decisions       # Learning history
+POST /api/meetings/schedule          # Main scheduling flow
+GET  /api/demo/naive-vs-intelligent  # Compare scheduling approaches
+```
+
+## Demo Users
+
+| User | Role | Calendar Profile |
+|------|------|------------------|
+| Alice | Executive | Customer calls, manager 1:1s, packed schedule |
+| Bob | Engineer | Focus time, standups, code reviews |
+| Carol | PM | Cross-functional meetings, planning sessions |
+
+See the [main README](../README.md) for architecture details.
+
 
 - `GET /api/users` - List all users
 - `GET /api/users/{id}/calendar` - Get user's calendar

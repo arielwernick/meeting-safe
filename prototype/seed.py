@@ -25,7 +25,8 @@ def seed_database():
     # Base date: tomorrow
     base = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     
-    # Alice's calendar - busy executive (packed day!)
+    # Alice's calendar - busy executive (packed day with mix of 30min and 1hr slots!)
+    # FREE slots: 8:30-9am (30m), 9:30-10am (30m), 13:00-14:00 (1hr), 14:30-15:00 (30m), 16:00-16:30 (30m)
     alice_events = [
         CalendarEventDB(
             id=str(uuid.uuid4()),
@@ -38,6 +39,7 @@ def seed_database():
             importance=3,
             recurring=True
         ),
+        # FREE: 8:30-9:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="alice",
@@ -49,6 +51,7 @@ def seed_database():
             importance=5,
             recurring=True
         ),
+        # FREE: 9:30-10:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="alice",
@@ -74,14 +77,15 @@ def seed_database():
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="alice",
-            title="Lunch with Investor",
+            title="Quick Lunch",
             start_time=base + timedelta(hours=12),
-            end_time=base + timedelta(hours=13),
-            event_type="external_meeting",
-            external=True,
-            importance=8,
-            recurring=False
+            end_time=base + timedelta(hours=12, minutes=30),
+            event_type="personal",
+            external=False,
+            importance=2,
+            recurring=True
         ),
+        # FREE: 12:30-14:00 (1.5 hr slot - great for 1hr meeting)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="alice",
@@ -93,6 +97,7 @@ def seed_database():
             importance=7,
             recurring=True
         ),
+        # FREE: 14:30-15:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="alice",
@@ -104,6 +109,7 @@ def seed_database():
             importance=6,
             recurring=False
         ),
+        # FREE: 16:00-16:30 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="alice",
@@ -118,7 +124,9 @@ def seed_database():
     ]
     
     # Bob's calendar - engineer with focus time blocks
+    # FREE slots: 8:00-8:30 (30m), 15:30-16:00 (30m)
     bob_events = [
+        # FREE: 8:00-8:30 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="bob",
@@ -146,7 +154,7 @@ def seed_database():
             user_id="bob",
             title="Code Review Session",
             start_time=base + timedelta(hours=11),
-            end_time=base + timedelta(hours=12),
+            end_time=base + timedelta(hours=11, minutes=30),
             event_type="team_meeting",
             external=False,
             importance=5,
@@ -155,12 +163,34 @@ def seed_database():
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="bob",
+            title="Tech Debt Planning",
+            start_time=base + timedelta(hours=11, minutes=30),
+            end_time=base + timedelta(hours=12),
+            event_type="team_meeting",
+            external=False,
+            importance=4,
+            recurring=False
+        ),
+        CalendarEventDB(
+            id=str(uuid.uuid4()),
+            user_id="bob",
             title="Lunch Break",
             start_time=base + timedelta(hours=12),
-            end_time=base + timedelta(hours=13),
+            end_time=base + timedelta(hours=12, minutes=30),
             event_type="personal",
             external=False,
             importance=2,
+            recurring=True
+        ),
+        CalendarEventDB(
+            id=str(uuid.uuid4()),
+            user_id="bob",
+            title="Mentoring Session",
+            start_time=base + timedelta(hours=12, minutes=30),
+            end_time=base + timedelta(hours=13),
+            event_type="internal_1on1",
+            external=False,
+            importance=5,
             recurring=True
         ),
         CalendarEventDB(
@@ -196,6 +226,7 @@ def seed_database():
             importance=5,
             recurring=True
         ),
+        # FREE: 15:30-16:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="bob",
@@ -210,7 +241,9 @@ def seed_database():
     ]
     
     # Carol's calendar - PM with back-to-back meetings
+    # FREE slots: 8:00-9:00 (1hr), 9:30-10:00 (30m), 11:30-12:00 (30m), 12:30-13:00 (30m), 15:00-15:30 (30m)
     carol_events = [
+        # FREE: 8:00-9:00 (1hr slot!)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="carol",
@@ -222,6 +255,7 @@ def seed_database():
             importance=5,
             recurring=True
         ),
+        # FREE: 9:30-10:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="carol",
@@ -233,6 +267,7 @@ def seed_database():
             importance=8,
             recurring=False
         ),
+        # FREE: 11:30-12:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="carol",
@@ -244,6 +279,7 @@ def seed_database():
             importance=7,
             recurring=False
         ),
+        # FREE: 12:30-13:00 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="carol",
@@ -260,12 +296,24 @@ def seed_database():
             user_id="carol",
             title="Vendor Call - Tools",
             start_time=base + timedelta(hours=14),
-            end_time=base + timedelta(hours=15),
+            end_time=base + timedelta(hours=14, minutes=30),
             event_type="vendor_call",
             external=True,
             importance=6,
             recurring=False
         ),
+        CalendarEventDB(
+            id=str(uuid.uuid4()),
+            user_id="carol",
+            title="Quick Budget Review",
+            start_time=base + timedelta(hours=14, minutes=30),
+            end_time=base + timedelta(hours=15),
+            event_type="internal_meeting",
+            external=False,
+            importance=4,
+            recurring=False
+        ),
+        # FREE: 15:00-15:30 (30 min slot)
         CalendarEventDB(
             id=str(uuid.uuid4()),
             user_id="carol",

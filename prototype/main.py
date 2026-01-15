@@ -255,6 +255,118 @@ def privacy_comparison(db: Session = Depends(get_db)):
     }
 
 
+@app.get("/api/demo/naive-vs-intelligent")
+def naive_vs_intelligent_comparison(
+    user_id: str = "alice",
+    db: Session = Depends(get_db)
+):
+    """
+    Demo endpoint showing the difference between naive and intelligent scheduling.
+    
+    Naive: Just checks if slot is free/busy
+    Intelligent: Uses learned preferences to make smart tradeoffs
+    """
+    from datetime import datetime, timedelta
+    
+    agent = UserProxyAgent(user_id, db)
+    
+    # Get tomorrow's calendar
+    tomorrow = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    events = agent.get_calendar(tomorrow, tomorrow + timedelta(hours=12))
+    decisions = agent.get_decision_history()
+    
+    # Build naive view (just busy/free)
+    naive_slots = []
+    intelligent_slots = []
+    
+    for hour in range(9, 17):  # 9 AM to 5 PM
+        slot_time = tomorrow + timedelta(hours=hour)
+        conflict = agent.get_conflict_at(slot_time, 30)
+        
+        if conflict:
+            # Naive: just says BUSY
+            naive_slots.append({
+                "time": slot_time.strftime("%I:%M %p"),
+                "status": "BUSY",
+                "reason": f"Conflict with: {conflict['title']}"
+            })
+            
+            # Intelligent: considers importance and learned preferences
+            is_external = conflict.get("external", False)
+            importance = conflict.get("importance", 5)
+            event_type = conflict.get("event_type", "meeting")
+            
+            # Check learned preferences
+            protect_types = {d["conflicting_type"] for d in decisions if d.get("user_action") == "rejected"}
+            reschedule_types = {d["conflicting_type"] for d in decisions if d.get("user_action") == "accepted"}
+            
+            if is_external:
+                intelligent_status = "PROTECT"
+                intelligent_reason = "External meeting - never reschedule"
+            elif event_type in protect_types:
+                intelligent_status = "PROTECT"
+                intelligent_reason = f"🧠 Learned: User protects {event_type}"
+            elif event_type in reschedule_types:
+                intelligent_status = "RESCHEDULE_OK"
+                intelligent_reason = f"🧠 Learned: User accepts rescheduling {event_type}"
+            elif importance <= 4:
+                intelligent_status = "RESCHEDULE_OK"
+                intelligent_reason = f"Low importance ({importance}/10)"
+            elif importance <= 7:
+                intelligent_status = "RELUCTANT"
+                intelligent_reason = f"Medium importance ({importance}/10)"
+            else:
+                intelligent_status = "PROTECT"
+                intelligent_reason = f"High importance ({importance}/10)"
+            
+            intelligent_slots.append({
+                "time": slot_time.strftime("%I:%M %p"),
+                "status": intelligent_status,
+                "reason": intelligent_reason,
+                "conflict": conflict["title"],
+                "event_type": event_type,
+                "importance": importance
+            })
+        else:
+            # Both systems say FREE
+            naive_slots.append({
+                "time": slot_time.strftime("%I:%M %p"),
+                "status": "FREE",
+                "reason": "No conflict"
+            })
+            intelligent_slots.append({
+                "time": slot_time.strftime("%I:%M %p"),
+                "status": "FREE",
+                "reason": "No conflict",
+                "conflict": None
+            })
+    
+    # Count available slots
+    naive_available = sum(1 for s in naive_slots if s["status"] == "FREE")
+    intelligent_available = sum(1 for s in intelligent_slots if s["status"] in ["FREE", "RESCHEDULE_OK"])
+    
+    return {
+        "user_id": user_id,
+        "comparison": {
+            "naive": {
+                "description": "Traditional scheduler - only sees busy/free",
+                "available_slots": naive_available,
+                "slots": naive_slots
+            },
+            "intelligent": {
+                "description": "Meeting Safe - learns preferences, makes smart tradeoffs",
+                "available_slots": intelligent_available,
+                "slots": intelligent_slots,
+                "preferences_used": [
+                    {"type": "protect", "event_types": list({d["conflicting_type"] for d in decisions if d.get("user_action") == "rejected" and d.get("conflicting_type")})},
+                    {"type": "reschedule_ok", "event_types": list({d["conflicting_type"] for d in decisions if d.get("user_action") == "accepted" and d.get("conflicting_type")})}
+                ]
+            }
+        },
+        "insight": f"Naive sees {naive_available} slots, Intelligent sees {intelligent_available} options (including smart rescheduling)"
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=config.HOST, port=config.PORT)

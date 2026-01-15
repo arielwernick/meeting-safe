@@ -44,6 +44,8 @@ class UtilityResponse(BaseModel):
     escalate: bool = False
     escalation_reason: Optional[str] = None
     reasoning: Optional[str] = None
+    slot_breakdown: Optional[list[dict]] = None  # Rich per-slot reasoning
+    preferences_applied: Optional[list[dict]] = None  # Which preferences affected scoring
 
 
 class TimeSlot(BaseModel):

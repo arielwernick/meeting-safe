@@ -127,7 +127,9 @@ class MeetingAgent:
                     {
                         "user_id": u.user_id,
                         "utilities": u.utilities,
-                        "reasoning": u.reasoning
+                        "reasoning": u.reasoning,
+                        "slot_breakdown": u.slot_breakdown,
+                        "preferences_applied": u.preferences_applied
                     }
                     for u in participant_utilities
                 ],
