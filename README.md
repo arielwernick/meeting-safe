@@ -1,39 +1,39 @@
-# Meeting Safe 🔒
+# Meeting Safe
 
-> Schedule meetings across multiple people without anyone seeing each other's calendars. Not even the scheduler.
+## The Challenge
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+> Meeting scheduling is a mostly solved problem when one person or agent has access to all calendars. It gets interesting when access is gated. Can you build an agentic system where each agent in the system only has access to the calendar of an individual, yet meetings are scheduled based on the availability of multiple people?
+>
+> The problem gets trickier when you start adding intelligence. I have meetings on my calendar I rarely attend. I'll reschedule internal 1:1s to make room for external customer calls. And everyone controls their own calendar in a slightly different way. How can a scheduling agent learn these preferences over time, instead of just looking for open slots, and possibly even escalate to me when needed.
+>
+> — [Distyl AI Engineering Challenge](https://www.linkedin.com/posts/willcrichton_following-up-from-my-post-yesterday-about-activity-7285015651665965056-P0jL)
 
-## The Problem
+---
 
-**Traditional meeting schedulers see everything.** When you use Calendly, x.ai, or your company's scheduling tool, a central system has access to everyone's availability. It knows when you're free, when you're busy, and patterns emerge: "Alice is always in meetings on Tuesday afternoons." 
+## Two Problems
 
-This is a privacy nightmare for sensitive organizations.
+This challenge contains two distinct problems:
 
-**Meeting Safe sees nothing but hashes** — yet still finds the perfect time.
+### Problem 1: Privacy
+**How do you coordinate across calendars no one can see?**
 
-```
-Traditional Scheduler          Meeting Safe
-─────────────────────         ─────────────
-Alice: 9am ❌ 10am ✓          Alice: hash_01 → 85
-Bob:   9am ✓ 10am ❌    vs    Bob:   hash_01 → 60
-Carol: 9am ✓ 10am ✓          Carol: hash_01 → 40
-                              
-Knows: Everyone's calendar     Knows: Just scores
-```
+Traditional schedulers (Calendly, x.ai) require a central system with access to everyone's availability. This leaks calendar data and enables inference attacks ("Free at 9?" "No." "10?" "No." ...).
 
-## How It Works (30 seconds)
+### Problem 2: Intelligence  
+**How do you schedule smarter than free/busy?**
 
-1. **You want to schedule with Alice, Bob, Carol**
-2. **Your agent creates an event with possible time slots, each slot gets a hashed ID**
-3. **Each attendee's agent receives the hash→time mapping, scores each slot privately**
-4. **Attendees send back only hashes + scores** — the Meeting Agent never sees actual times
-5. **Best hash wins** — your agent decrypts it back to the actual time
+Real calendars have nuance. Some meetings are sacred (customer calls), others are movable (team standups). A good scheduler learns these preferences instead of just finding empty slots.
+
+---
+
+## Two Solutions
+
+### 🔒 Privacy Layer
+Each agent scores time slots privately, then sends **hashes + scores** to a coordinator. The coordinator picks the best score without ever knowing what time it represents.
 
 ```
                     ┌─────────────────────────┐
-                    │     Your Agent          │
+                    │     Alice Agent         │
                     │  (creates the meeting)  │
                     └───────────┬─────────────┘
                                 │
@@ -75,8 +75,8 @@ Knows: Everyone's calendar     Knows: Just scores
                    │                       │
                    │ ④ Sums scores:        │
                    │ "x7f2": 100           │
-                   │ "abc1": 185  ← BEST   │
-                   │ "k9p4": 240           │
+                   │ "abc1": 185           │
+                   │ "k9p4": 240  ← BEST   │
                    │                       │
                    │ (has no idea what     │
                    │  these hashes mean!)  │
@@ -86,201 +86,95 @@ Knows: Everyone's calendar     Knows: Just scores
                                │
                                ▼
                    ┌───────────────────────┐
-                   │     Your Agent        │
+                   │     Alice Agent       │
                    │                       │
                    │ Decrypts: k9p4 = 11am │
                    │ Books the meeting! 📅 │
                    └───────────────────────┘
 ```
 
-**The privacy guarantee:** The Meeting Agent orchestrates everything but only ever sees opaque hashes like "abc1". It can do math, pick winners—but never knows it just scheduled an 11am meeting.
+**Key insight:** The Meeting Agent can sum scores and pick winners—but only the organizer can decrypt the winning hash back to an actual time.
+
+### 🧠 Intelligence Layer
+Each agent uses an LLM to score slots based on:
+- **Conflicts**: What's already scheduled
+- **Importance**: Customer call vs team standup
+- **Learned preferences**: "I always protect focus time"
+- **Escalation**: Ask the user when uncertain
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Alice's Decision Matrix                            │
+│  ─────────────────────────────────────────────────  │
+│  Slot     │ Conflict        │ Decision    │ Score  │
+│  ─────────────────────────────────────────────────  │
+│  9:00 AM  │ Customer Call   │ PROTECT     │  10    │
+│  10:00 AM │ Team Standup    │ RESCHEDULE  │  70    │
+│  11:00 AM │ —               │ FREE        │  85    │
+│  2:00 PM  │ Focus Time      │ PROTECT     │  20    │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Two UIs
+
+### `/app` — Privacy Layer
+Watch hash-based coordination happen. See what the Meeting Agent sees (just hashes and scores).
+
+### `/app/intelligence` — Intelligence Layer  
+Tabbed dashboard showing each user's decision matrix, learned preferences, and scoring breakdown.
+
+---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/yourusername/meeting-safe.git
+git clone https://github.com/arielwernick/meeting-safe.git
 cd meeting-safe/prototype
 
-# Setup (one time)
 python -m venv venv
-.\venv\Scripts\Activate.ps1  # Windows
-# source venv/bin/activate   # Mac/Linux
+.\venv\Scripts\Activate.ps1  # Windows (or: source venv/bin/activate)
 pip install -r requirements.txt
 
-# Run
 python seed.py  # Create sample data
-python main.py  # Start server
+python main.py  # Start server → http://localhost:8000/app
 ```
-
-**Open http://localhost:8000/app** and explore the two-layer system!
 
 ---
-
-## Two Layers, One System
-
-Meeting Safe separates two hard problems into distinct, composable layers:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    INTELLIGENCE LAYER                           │
-│   Each user's agent reasons about THEIR calendar privately      │
-│   • LLM scores slots based on context + learned preferences     │
-│   • Knows: "I reschedule standups for customer calls"           │
-│   • Escalates when uncertain                                    │
-│   • Output: scores per time slot                                │
-└─────────────────────────────────────────────────────────────────┘
-                              │ scores
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     PRIVACY LAYER                               │
-│   Coordination happens WITHOUT revealing calendars              │
-│   • Hash-based slot IDs hide actual times                       │
-│   • Meeting Agent only sees hashes + scores                     │
-│   • Only organizer can decrypt the winning slot                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Why separate them?**
-- You could swap the LLM for a dumb "free/busy" checker — privacy still works
-- You could disable hashing for internal use — intelligence still works
-- Each layer has ONE job, making it easier to understand, test, and trust
-
----
-
-## The Demo: Two Views
-
-### 📅 View 1: Scheduling (Privacy Layer)
-`http://localhost:8000/app`
-
-Watch the hash-based coordination in real-time:
-- **Left panel**: User calendars (private to each agent)
-- **Right panel**: What the Meeting Agent sees (just hashes!)
-- **Result**: Meeting scheduled, privacy preserved
-
-### 🧠 View 2: Intelligence Dashboard
-`http://localhost:8000/app/intelligence`
-
-Explore how each agent makes decisions — tabbed like Excel workbooks:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  [Alice]  [Bob]  [Carol]                                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Alice's Decision Matrix                                        │
-│  ───────────────────────────────────────────────────────────── │
-│  Slot      │ Base │ Conflict    │ Preference │ Final │ Reason  │
-│  ───────────────────────────────────────────────────────────── │
-│  9:00 AM   │  50  │ -30 (1:1)   │ +10 (AM)   │  30   │ Has 1:1 │
-│  10:00 AM  │  50  │ -80 (cust)  │ +10 (AM)   │ -20   │ Customer│
-│  11:00 AM  │  50  │  0          │ -5 (lunch) │  45   │ Open    │
-│  2:00 PM   │  50  │ -20 (team)  │ +15 (pref) │  45   │ Movable │
-│  3:00 PM   │  50  │  0          │ +20 (peak) │  70   │ ⭐ Best │
-│                                                                 │
-│  Learned Preferences:                                           │
-│  • Never reschedule: Customer calls, Board meetings             │
-│  • Will reschedule: Team syncs, Internal 1:1s                   │
-│  • Peak productivity: 2-4pm                                     │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-Click any user tab to see:
-- **Decision matrix**: How each slot was scored (base, conflicts, preferences)
-- **Learned preferences**: What patterns the agent has learned
-- **Recent decisions**: History of escalations and overrides
-
----
-
-## What Makes This Different
-
-### 🔒 Privacy by Design
-Calendar data **never leaves** the user's agent. The coordinator sees utility scores attached to hashes—it can't map them back to times.
-
-### 🛡️ Inference-Attack Resistant  
-Traditional systems leak calendars through iteration ("Free at 9?" "No." "Free at 9:30?" "No." ...). We submit all slots simultaneously—no probing possible.
-
-### 🧠 Intelligent, Not Just Available
-The system learns your preferences:
-- "Alice never reschedules customer calls"
-- "Bob prefers mornings"
-- "Carol will move team standups for external meetings"
-
-### ⚡ Escalates When Uncertain
-Instead of guessing wrong, Meeting Safe asks you when:
-- Multiple times score similarly
-- No good options exist
-- It's a high-stakes meeting
 
 ## Project Structure
 
 ```
 meeting-safe/
-├── docs/
-│   ├── architecture.md    # System design deep-dive
-│   ├── security.md        # Threat model & attack resistance
-│   └── intelligence.md    # LLM integration & learning
 ├── prototype/
-│   ├── main.py            # FastAPI server
+│   ├── main.py                   # FastAPI server
 │   ├── agents/
 │   │   ├── user_proxy_agent.py   # Private calendar + LLM scoring
 │   │   ├── meeting_agent.py      # Hash-based coordination
-│   │   └── hashing_agent.py      # SHA256 time obfuscation
-│   ├── llm_service.py     # Mock LLM (swap to OpenAI)
+│   │   └── hashing_agent.py      # Time slot obfuscation
 │   └── static/
-│       ├── index.html            # Scheduling UI (Privacy Layer)
-│       └── intelligence.html     # Decision Matrix UI (Intelligence Layer)
+│       ├── index.html            # Privacy Layer UI
+│       └── intelligence.html     # Intelligence Layer UI
+├── docs/
+│   ├── architecture.md
+│   ├── security.md
+│   └── intelligence.md
 └── README.md
 ```
 
-## Sample Users
+---
 
-The prototype includes 3 users (Alice, Bob, Carol) with realistic calendars:
+## The Solution
 
-| User | Profile | Calendar Style | Reschedulability |
-|------|---------|----------------|------------------|
-| Alice | Executive | Customer calls, manager 1:1s | Never moves customer calls |
-| Bob | Engineer | Focus time, standups | Protects deep work time |
-| Carol | PM | Cross-functional syncs | Flexible with internal meetings |
+We solved both problems by keeping them separate:
 
-## Deep Dive
+1. **Privacy works without intelligence** — swap the LLM for a simple free/busy check, hashing still protects calendars
+2. **Intelligence works without privacy** — disable hashing for internal use, smart scoring still helps
+3. **Together they're powerful** — intelligent scores flow through private coordination
 
-| Document | What You'll Learn |
-|----------|-------------------|
-| [Architecture](docs/architecture.md) | Three-agent model, data flow, initiator-only decryption |
-| [Security Model](docs/security.md) | Threat analysis, attack resistance, trust assumptions |
-| [Intelligence](docs/intelligence.md) | LLM integration, learning from decisions, escalation logic |
-
-## Using Real LLM
-
-The prototype uses a deterministic mock LLM by default. To enable GPT-4:
-
-```bash
-# Create .env file
-echo "OPENAI_API_KEY=sk-your-key-here" > .env
-echo "LLM_MODE=openai" >> .env
-
-# Restart server
-python main.py
-```
-
-## Built For
-
-This project demonstrates:
-- **Multi-agent coordination** with clear trust boundaries
-- **Privacy-preserving computation** via hash-based obfuscation
-- **LLM-powered intelligence** that learns preferences
-- **Security-first design** that blocks inference attacks
-
-Originally built for [Distyl's AI Engineering hiring challenge](https://www.linkedin.com/posts/willcrichton_following-up-from-my-post-yesterday-about-activity-7285015651665965056-P0jL).
-
-## License
-
-MIT — build on it, improve it, make scheduling private everywhere.
+The two layers compose cleanly because each has one job.
 
 ---
 
-<p align="center">
-  <strong>Stop sharing your calendar with schedulers.</strong><br>
-  Meeting Safe: Privacy-preserving scheduling for the rest of us.
-</p>
+MIT License
